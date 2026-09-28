@@ -46,16 +46,13 @@ export function createApp(deps: AppDeps): Express {
   });
 
   // --- Rate-limiter SaaS API ---
-
-  app.use(
-    '/v1',
-    createAdminRouter({
-      tenantsRepo: deps.tenantsRepo,
-      apiKeysRepo: deps.apiKeysRepo,
-      adminToken: deps.adminToken,
-      apiKeyPepper: deps.apiKeyPepper,
-    }),
-  );
+  //
+  // The more specific /v1/rules and /v1/rate-limit routers must be mounted
+  // before the broader /v1 admin router: the admin router's auth middleware
+  // is unconditional router-level `.use()`, so it would otherwise intercept
+  // every /v1/* request (erroring via next(err), never falling through) —
+  // including ones meant for these other two routers — since Express tries
+  // mounted routers in registration order by path prefix.
 
   app.use(
     '/v1/rules',
@@ -68,6 +65,16 @@ export function createApp(deps: AppDeps): Express {
       ruleService: deps.ruleService,
       engine: deps.engine,
       verifyApiKey,
+    }),
+  );
+
+  app.use(
+    '/v1',
+    createAdminRouter({
+      tenantsRepo: deps.tenantsRepo,
+      apiKeysRepo: deps.apiKeysRepo,
+      adminToken: deps.adminToken,
+      apiKeyPepper: deps.apiKeyPepper,
     }),
   );
 
