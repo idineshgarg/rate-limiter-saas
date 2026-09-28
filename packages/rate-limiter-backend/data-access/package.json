@@ -18,6 +18,18 @@
       "scope:rate-limiter-backend"
     ],
     "targets": {
+      "build": {
+        "dependsOn": ["prisma-generate"]
+      },
+      "typecheck": {
+        "dependsOn": ["prisma-generate"]
+      },
+      "lint": {
+        "dependsOn": ["prisma-generate"]
+      },
+      "test": {
+        "dependsOn": ["prisma-generate"]
+      },
       "prisma-generate": {
         "cache": true,
         "executor": "nx:run-commands",
