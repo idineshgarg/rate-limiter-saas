@@ -1,0 +1,705 @@
+openapi: 3.0.3
+info:
+  title: Rate Limiter SaaS API
+  description: >
+    Multi-tenant distributed rate limiter. Tenants sign up, create API keys,
+    and configure rate-limit rules (fixed window, sliding window, leaky
+    bucket, or token bucket) per resource. Client applications then call
+    `/v1/rate-limit/check` with their API key to enforce those limits.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3333
+    description: Local development
+
+tags:
+  - name: Auth
+    description: Self-service signup/login for the dashboard (cookie session)
+  - name: Account
+    description: Self-service API key & rule management (cookie session)
+  - name: Admin
+    description: Operator-only tenant/API-key bootstrap (X-Admin-Token)
+  - name: Rules
+    description: Rule CRUD authenticated via the tenant's own API key
+  - name: Rate Limit
+    description: The core enforcement endpoint
+
+security: []
+
+paths:
+  # ---------------------------------------------------------------- Auth
+  /v1/auth/signup:
+    post:
+      tags: [Auth]
+      operationId: signup
+      summary: Create a tenant account and start a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201':
+          description: Account created; session cookie set
+          headers:
+            Set-Cookie:
+              schema: { type: string, example: 'rl_session=<jwt>; Path=/; HttpOnly; SameSite=Lax' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '409':
+          description: An account with this email already exists
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Log in and start a session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Logged in; session cookie set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Clear the session cookie
+      responses:
+        '204': { description: Logged out }
+
+  /v1/auth/me:
+    get:
+      tags: [Auth]
+      operationId: getCurrentTenant
+      summary: Get the currently signed-in tenant
+      security: [{ SessionAuth: [] }]
+      responses:
+        '200':
+          description: The signed-in tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ------------------------------------------------------------- Account
+  /v1/account/api-keys:
+    get:
+      tags: [Account]
+      operationId: listAccountApiKeys
+      summary: List API keys for the signed-in tenant
+      security: [{ SessionAuth: [] }]
+      responses:
+        '200':
+          description: The tenant's API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ApiKeySummary' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Account]
+      operationId: createAccountApiKey
+      summary: Create a new API key for the signed-in tenant
+      security: [{ SessionAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201':
+          description: >
+            The new key. `key` (the raw value) is returned only this once —
+            only its hash is persisted, so save it now.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreatedApiKey' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/account/api-keys/{id}:
+    delete:
+      tags: [Account]
+      operationId: revokeAccountApiKey
+      summary: Revoke an API key belonging to the signed-in tenant
+      security: [{ SessionAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      responses:
+        '204': { description: Revoked }
+        '401':
+          description: Not signed in, or the key does not belong to this tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/account/rules:
+    get:
+      tags: [Account]
+      operationId: listAccountRules
+      summary: List rate-limit rules for the signed-in tenant
+      security: [{ SessionAuth: [] }]
+      responses:
+        '200':
+          description: The tenant's rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RateLimitRule' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Account]
+      operationId: createAccountRule
+      summary: Create a rule for one of the tenant's own API keys
+      description: >
+        `apiKeyId` must belong to the signed-in tenant (verified server-side)
+        — the rest of the body is one of the four algorithm-specific shapes.
+      security: [{ SessionAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRuleInput' }
+      responses:
+        '201':
+          description: The created rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401':
+          description: Not signed in, or apiKeyId does not belong to this tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /v1/account/rules/{id}:
+    get:
+      tags: [Account]
+      operationId: getAccountRule
+      summary: Get one rule
+      security: [{ SessionAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      responses:
+        '200':
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+    patch:
+      tags: [Account]
+      operationId: updateAccountRule
+      summary: Update a rule's numeric parameters or active state
+      description: Algorithm and resource are immutable once a rule exists.
+      security: [{ SessionAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRuleInput' }
+      responses:
+        '200':
+          description: The updated rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+    delete:
+      tags: [Account]
+      operationId: deleteAccountRule
+      summary: Deactivate a rule (soft delete)
+      security: [{ SessionAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      responses:
+        '204': { description: Deactivated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+
+  /v1/account/rules/{id}/usage:
+    get:
+      tags: [Account]
+      operationId: getAccountRuleUsage
+      summary: Check current usage for a rule without consuming a request
+      description: >
+        Read-only — reports what `/v1/rate-limit/check` would currently
+        return, computed from live Redis state, but never mutates it.
+        `identifier` is required when the rule's scope is `IDENTIFIER`,
+        since usage is tracked per-identifier in that case.
+      security: [{ SessionAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/RuleId'
+        - name: identifier
+          in: query
+          required: false
+          description: Required if the rule's scope is IDENTIFIER.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Current usage
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RuleUsage' }
+        '400':
+          description: Missing identifier for an IDENTIFIER-scoped rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+
+  # --------------------------------------------------------------- Admin
+  /v1/tenants:
+    post:
+      tags: [Admin]
+      operationId: createTenant
+      summary: Create a tenant (operator bootstrap, no password/login access)
+      security: [{ AdminTokenAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+      responses:
+        '201':
+          description: The created tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Tenant' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/tenants/{tenantId}/api-keys:
+    post:
+      tags: [Admin]
+      operationId: createTenantApiKey
+      summary: Create an API key for a tenant
+      security: [{ AdminTokenAuth: [] }]
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+      responses:
+        '201':
+          description: >
+            The new key. `key` (the raw value) is returned only this once —
+            only its hash is persisted, so save it now.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CreatedApiKey' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/api-keys/{id}:
+    delete:
+      tags: [Admin]
+      operationId: revokeApiKey
+      summary: Revoke any API key
+      security: [{ AdminTokenAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ApiKeyId'
+      responses:
+        '204': { description: Revoked }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # --------------------------------------------------------------- Rules
+  /v1/rules:
+    get:
+      tags: [Rules]
+      operationId: listRules
+      summary: List rules for the authenticated tenant
+      security: [{ ApiKeyAuth: [] }]
+      responses:
+        '200':
+          description: The tenant's rules
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/RateLimitRule' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Rules]
+      operationId: createRule
+      summary: Create a rule for the API key used to authenticate
+      security: [{ ApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRuleInput' }
+      responses:
+        '201':
+          description: The created rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /v1/rules/{id}:
+    get:
+      tags: [Rules]
+      operationId: getRule
+      summary: Get one rule
+      security: [{ ApiKeyAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      responses:
+        '200':
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+    patch:
+      tags: [Rules]
+      operationId: updateRule
+      summary: Update a rule's numeric parameters or active state
+      security: [{ ApiKeyAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRuleInput' }
+      responses:
+        '200':
+          description: The updated rule
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RateLimitRule' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+    delete:
+      tags: [Rules]
+      operationId: deleteRule
+      summary: Deactivate a rule (soft delete)
+      security: [{ ApiKeyAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RuleId' }]
+      responses:
+        '204': { description: Deactivated }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/RuleNotFound' }
+
+  # --------------------------------------------------------- Rate Limit
+  /v1/rate-limit/check:
+    post:
+      tags: [Rate Limit]
+      operationId: checkRateLimit
+      summary: Check and consume against the rule configured for a resource
+      description: >
+        Looks up the active rule for `(apiKeyId, resource)`, consumes one
+        request (or `cost`) against it, and returns whether it was allowed.
+        `identifier` is required when the matched rule's scope is
+        IDENTIFIER.
+      security: [{ ApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resource]
+              properties:
+                resource: { type: string, minLength: 1, maxLength: 200 }
+                identifier:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  description: Required if the matched rule's scope is IDENTIFIER.
+                cost: { type: integer, minimum: 1, default: 1 }
+      responses:
+        '200':
+          description: Allowed
+          headers:
+            X-RateLimit-Limit: { schema: { type: integer } }
+            X-RateLimit-Remaining: { schema: { type: integer } }
+            X-RateLimit-Reset: { schema: { type: integer }, description: Milliseconds until reset }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckAllowedResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404':
+          description: No active rule configured for this resource
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '429':
+          description: Denied — rate limit exceeded
+          headers:
+            X-RateLimit-Limit: { schema: { type: integer } }
+            X-RateLimit-Remaining: { schema: { type: integer, enum: [0] } }
+            X-RateLimit-Reset: { schema: { type: integer } }
+            Retry-After: { schema: { type: integer }, description: Seconds until retry }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckDeniedResponse' }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: A tenant's raw API key (shown once at creation time).
+    AdminTokenAuth:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+      description: Static operator token (ADMIN_TOKEN env var).
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: rl_session
+      description: httpOnly JWT session cookie set by /v1/auth/signup or /v1/auth/login.
+
+  parameters:
+    RuleId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ApiKeyId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    ValidationError:
+      description: Request failed validation
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    Unauthorized:
+      description: Missing or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    RuleNotFound:
+      description: No rule with that id on this tenant
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: VALIDATION_ERROR }
+            message: { type: string }
+
+    Tenant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        email: { type: string, format: email }
+        createdAt: { type: string, format: date-time }
+
+    ApiKeyStatus:
+      type: string
+      enum: [ACTIVE, REVOKED]
+
+    ApiKeySummary:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        prefix: { type: string, example: rlk_ab12cd34 }
+        status: { $ref: '#/components/schemas/ApiKeyStatus' }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time, nullable: true }
+
+    CreatedApiKey:
+      allOf:
+        - $ref: '#/components/schemas/ApiKeySummary'
+        - type: object
+          properties:
+            key:
+              type: string
+              description: The raw key. Shown only in this response — save it now.
+              example: rlk_ab12cd34EFghijKLmnopQRstuv
+
+    RateLimitAlgorithm:
+      type: string
+      enum: [FIXED_WINDOW, SLIDING_WINDOW, LEAKY_BUCKET, TOKEN_BUCKET]
+
+    RuleScope:
+      type: string
+      enum: [API_KEY, IDENTIFIER]
+      default: API_KEY
+      description: >
+        API_KEY limits the whole key globally; IDENTIFIER tracks a separate
+        counter per caller-supplied `identifier` within that key.
+
+    RateLimitRule:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenantId: { type: string, format: uuid }
+        apiKeyId: { type: string, format: uuid }
+        resource: { type: string }
+        algorithm: { $ref: '#/components/schemas/RateLimitAlgorithm' }
+        scope: { $ref: '#/components/schemas/RuleScope' }
+        limit: { type: integer }
+        windowMs: { type: integer, nullable: true }
+        capacity: { type: integer, nullable: true }
+        refillRatePerMs: { type: number, nullable: true }
+        leakRatePerMs: { type: number, nullable: true }
+        isActive: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    CreateRuleInput:
+      description: >
+        `apiKeyId` is required on /v1/account/rules (which api key the rule
+        applies to); it's implied by the authenticating key on /v1/rules.
+        One of four shapes depending on `algorithm`.
+      oneOf:
+        - $ref: '#/components/schemas/CreateFixedOrSlidingWindowRule'
+        - $ref: '#/components/schemas/CreateLeakyBucketRule'
+        - $ref: '#/components/schemas/CreateTokenBucketRule'
+      discriminator:
+        propertyName: algorithm
+        mapping:
+          FIXED_WINDOW: '#/components/schemas/CreateFixedOrSlidingWindowRule'
+          SLIDING_WINDOW: '#/components/schemas/CreateFixedOrSlidingWindowRule'
+          LEAKY_BUCKET: '#/components/schemas/CreateLeakyBucketRule'
+          TOKEN_BUCKET: '#/components/schemas/CreateTokenBucketRule'
+
+    CreateFixedOrSlidingWindowRule:
+      type: object
+      required: [resource, algorithm, limit, windowMs]
+      properties:
+        apiKeyId: { type: string, format: uuid }
+        resource: { type: string, minLength: 1, maxLength: 200 }
+        algorithm:
+          type: string
+          enum: [FIXED_WINDOW, SLIDING_WINDOW]
+        scope: { $ref: '#/components/schemas/RuleScope' }
+        limit: { type: integer, minimum: 1 }
+        windowMs: { type: integer, minimum: 1, description: Window length in ms }
+
+    CreateLeakyBucketRule:
+      type: object
+      required: [resource, algorithm, limit, leakRatePerMs]
+      properties:
+        apiKeyId: { type: string, format: uuid }
+        resource: { type: string, minLength: 1, maxLength: 200 }
+        algorithm: { type: string, enum: [LEAKY_BUCKET] }
+        scope: { $ref: '#/components/schemas/RuleScope' }
+        limit: { type: integer, minimum: 1 }
+        capacity: { type: integer, minimum: 1, description: Defaults to `limit` if omitted }
+        leakRatePerMs: { type: number, minimum: 0, exclusiveMinimum: true, description: Units drained per ms }
+
+    CreateTokenBucketRule:
+      type: object
+      required: [resource, algorithm, limit, refillRatePerMs]
+      properties:
+        apiKeyId: { type: string, format: uuid }
+        resource: { type: string, minLength: 1, maxLength: 200 }
+        algorithm: { type: string, enum: [TOKEN_BUCKET] }
+        scope: { $ref: '#/components/schemas/RuleScope' }
+        limit: { type: integer, minimum: 1 }
+        capacity: { type: integer, minimum: 1, description: Defaults to `limit` if omitted }
+        refillRatePerMs: { type: number, minimum: 0, exclusiveMinimum: true, description: Tokens added per ms }
+
+    UpdateRuleInput:
+      type: object
+      description: Algorithm and resource are immutable — only these fields may change.
+      properties:
+        limit: { type: integer, minimum: 1 }
+        windowMs: { type: integer, minimum: 1 }
+        capacity: { type: integer, minimum: 1 }
+        refillRatePerMs: { type: number, minimum: 0, exclusiveMinimum: true }
+        leakRatePerMs: { type: number, minimum: 0, exclusiveMinimum: true }
+        isActive: { type: boolean }
+
+    RuleUsage:
+      type: object
+      properties:
+        limit: { type: integer }
+        remaining: { type: integer }
+        resetMs: { type: integer, description: Milliseconds until the window/bucket fully resets }
+
+    CheckAllowedResponse:
+      type: object
+      properties:
+        allowed: { type: boolean, enum: [true] }
+        limit: { type: integer }
+        remaining: { type: integer }
+        resetMs: { type: integer }
+        algorithm: { $ref: '#/components/schemas/RateLimitAlgorithm' }
+
+    CheckDeniedResponse:
+      type: object
+      properties:
+        allowed: { type: boolean, enum: [false] }
+        limit: { type: integer }
+        remaining: { type: integer, enum: [0] }
+        retryAfterMs: { type: integer }
+        algorithm: { $ref: '#/components/schemas/RateLimitAlgorithm' }

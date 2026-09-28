@@ -39,3 +39,36 @@ else
   return {0, math.floor(capacity - level), retryAfter}
 end
 `;
+
+// Read-only — reports current usage without consuming a request (no HMSET/PEXPIRE).
+// KEYS[1] = key
+// ARGV[1] = now (ms)
+// ARGV[2] = capacity
+// ARGV[3] = leakRatePerMs
+// returns { remaining, resetMs }
+export const LEAKY_BUCKET_PEEK_LUA = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local capacity = tonumber(ARGV[2])
+local leakRatePerMs = tonumber(ARGV[3])
+
+local data = redis.call('HMGET', key, 'level', 'ts')
+local level = tonumber(data[1])
+local ts = tonumber(data[2])
+if level == nil then
+  return {capacity, 0}
+end
+
+local elapsed = now - ts
+if elapsed > 0 then
+  level = math.max(0, level - elapsed * leakRatePerMs)
+end
+
+local remaining = capacity - level
+if remaining < 0 then
+  remaining = 0
+end
+local resetMs = math.max(0, math.ceil(level / leakRatePerMs))
+
+return {math.floor(remaining), resetMs}
+`;

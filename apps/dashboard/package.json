@@ -1,0 +1,30 @@
+{
+  "name": "@dg/dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "targets": {
+      "serve": {
+        "dependsOn": ["@dg/rate-limiter-backend:serve"]
+      },
+      "dev": {
+        "dependsOn": ["@dg/rate-limiter-backend:serve"]
+      }
+    }
+  },
+  "dependencies": {
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-router-dom": "6.30.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "jsdom": "~22.1.0",
+    "@testing-library/react": "16.1.0",
+    "@testing-library/dom": "10.4.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/user-event": "^14.6.7"
+  }
+}

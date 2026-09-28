@@ -1,5 +1,5 @@
-import { UnauthorizedError } from '@org/rate-limiter-backend-auth';
-import { RuleNotFoundError, ValidationError } from '@org/rate-limiter-backend-rules';
+import { ConflictError, UnauthorizedError } from '@dg/rate-limiter-backend-auth';
+import { RuleNotFoundError, ValidationError } from '@dg/rate-limiter-backend-rules';
 import type { NextFunction, Request, Response } from 'express';
 
 interface KnownError extends Error {
@@ -10,7 +10,8 @@ function isKnownError(err: unknown): err is KnownError {
   return (
     err instanceof ValidationError ||
     err instanceof UnauthorizedError ||
-    err instanceof RuleNotFoundError
+    err instanceof RuleNotFoundError ||
+    err instanceof ConflictError
   );
 }
 
@@ -18,6 +19,7 @@ const STATUS_BY_ERROR = new Map<unknown, number>([
   [ValidationError, 400],
   [UnauthorizedError, 401],
   [RuleNotFoundError, 404],
+  [ConflictError, 409],
 ]);
 
 function statusFor(err: KnownError): number {

@@ -8,6 +8,8 @@ export {
 export {
   RATE_LIMIT_ALGORITHMS,
   type ConsumeParams,
+  type PeekParams,
+  type PeekResult,
   type RateLimitAlgorithm,
   type RateLimitResult,
   type RateLimitStrategy,

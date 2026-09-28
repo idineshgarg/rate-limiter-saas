@@ -37,3 +37,32 @@ else
   return {0, math.floor(tokens), retryAfter}
 end
 `;
+
+// Read-only — reports current usage without consuming a request (no HMSET/PEXPIRE).
+// KEYS[1] = key
+// ARGV[1] = now (ms)
+// ARGV[2] = capacity
+// ARGV[3] = refillRatePerMs
+// returns { remaining, resetMs }
+export const TOKEN_BUCKET_PEEK_LUA = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local capacity = tonumber(ARGV[2])
+local refillRatePerMs = tonumber(ARGV[3])
+
+local data = redis.call('HMGET', key, 'tokens', 'ts')
+local tokens = tonumber(data[1])
+local ts = tonumber(data[2])
+if tokens == nil then
+  return {capacity, 0}
+end
+
+local elapsed = now - ts
+if elapsed > 0 then
+  tokens = math.min(capacity, tokens + elapsed * refillRatePerMs)
+end
+
+local resetMs = math.max(0, math.ceil((capacity - tokens) / refillRatePerMs))
+
+return {math.floor(tokens), resetMs}
+`;

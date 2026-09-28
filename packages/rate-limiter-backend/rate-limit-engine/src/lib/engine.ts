@@ -4,7 +4,14 @@ import { FixedWindowStrategy } from './strategies/fixed-window.strategy.js';
 import { LeakyBucketStrategy } from './strategies/leaky-bucket.strategy.js';
 import { SlidingWindowStrategy } from './strategies/sliding-window.strategy.js';
 import { TokenBucketStrategy } from './strategies/token-bucket.strategy.js';
-import type { ConsumeParams, RateLimitAlgorithm, RateLimitResult, RateLimitStrategy } from './types.js';
+import type {
+  ConsumeParams,
+  PeekParams,
+  PeekResult,
+  RateLimitAlgorithm,
+  RateLimitResult,
+  RateLimitStrategy,
+} from './types.js';
 
 export class RateLimiterEngine {
   private readonly strategies: Record<RateLimitAlgorithm, RateLimitStrategy>;
@@ -21,6 +28,10 @@ export class RateLimiterEngine {
 
   consume(algorithm: RateLimitAlgorithm, params: ConsumeParams): Promise<RateLimitResult> {
     return this.strategies[algorithm].consume(params);
+  }
+
+  peek(algorithm: RateLimitAlgorithm, params: PeekParams): Promise<PeekResult> {
+    return this.strategies[algorithm].peek(params);
   }
 }
 

@@ -1,6 +1,12 @@
 import { buildRateLimitKey } from '../key.js';
 import type { RateLimiterRedisClient } from '../redis-commands.js';
-import type { ConsumeParams, RateLimitResult, RateLimitStrategy } from '../types.js';
+import type {
+  ConsumeParams,
+  PeekParams,
+  PeekResult,
+  RateLimitResult,
+  RateLimitStrategy,
+} from '../types.js';
 
 export class LeakyBucketStrategy implements RateLimitStrategy {
   readonly algorithm = 'LEAKY_BUCKET' as const;
@@ -31,5 +37,21 @@ export class LeakyBucketStrategy implements RateLimitStrategy {
       resetMs: resetOrRetryAfterMs,
       ...(allowed === 1 ? {} : { retryAfterMs: resetOrRetryAfterMs }),
     };
+  }
+
+  async peek(params: PeekParams): Promise<PeekResult> {
+    if (!params.leakRatePerMs) {
+      throw new Error('LEAKY_BUCKET requires leakRatePerMs');
+    }
+    const capacity = params.capacity ?? params.limit;
+    const key = buildRateLimitKey(this.algorithm, params);
+
+    const [remaining, resetMs] = await this.redis.rlPeekLeakyBucket(
+      key,
+      Date.now(),
+      capacity,
+      params.leakRatePerMs,
+    );
+    return { limit: capacity, remaining, resetMs };
   }
 }

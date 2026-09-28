@@ -1,14 +1,18 @@
 import { createVerifyApiKey } from './lib/verify-api-key.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { createAccountRouter } from './routes/account.routes.js';
 import { createAdminRouter } from './routes/admin.routes.js';
+import { createAuthRouter } from './routes/auth.routes.js';
+import { createDashboardRulesRouter } from './routes/dashboard-rules.routes.js';
 import { createRateLimitRouter } from './routes/rate-limit.routes.js';
 import { createRulesRouter } from './routes/rules.routes.js';
-import type { RateLimiterEngine } from '@org/rate-limiter-backend-rate-limit-engine';
+import type { RateLimiterEngine } from '@dg/rate-limiter-backend-rate-limit-engine';
 import type {
   ApiKeysRepository,
   TenantsRepository,
-} from '@org/rate-limiter-backend-data-access';
-import type { RuleService } from '@org/rate-limiter-backend-rules';
+} from '@dg/rate-limiter-backend-data-access';
+import type { RuleService } from '@dg/rate-limiter-backend-rules';
+import cookieParser from 'cookie-parser';
 import express, { type Express } from 'express';
 
 export interface AppDeps {
@@ -18,6 +22,9 @@ export interface AppDeps {
   engine: RateLimiterEngine;
   adminToken: string;
   apiKeyPepper: string;
+  sessionSecret: string;
+  /** Origin the dashboard frontend is served from — required for credentialed CORS requests. */
+  corsOrigin: string;
 }
 
 export function createApp(deps: AppDeps): Express {
@@ -25,10 +32,15 @@ export function createApp(deps: AppDeps): Express {
   const verifyApiKey = createVerifyApiKey(deps.apiKeysRepo, deps.apiKeyPepper);
 
   app.use(express.json());
+  app.use(cookieParser());
 
-  // CORS configuration for React app
+  // CORS configuration for the dashboard frontend. A credentialed request
+  // (cookies) can't use the wildcard origin — the browser rejects that
+  // combination — so this reflects the one configured frontend origin and
+  // explicitly opts in to credentials.
   app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Origin', deps.corsOrigin);
+    res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     res.header(
       'Access-Control-Allow-Headers',
@@ -47,11 +59,11 @@ export function createApp(deps: AppDeps): Express {
 
   // --- Rate-limiter SaaS API ---
   //
-  // The more specific /v1/rules and /v1/rate-limit routers must be mounted
-  // before the broader /v1 admin router: the admin router's auth middleware
-  // is unconditional router-level `.use()`, so it would otherwise intercept
+  // Every router mounted at a prefix more specific than the bare /v1 admin
+  // router must come first: the admin router's auth middleware is
+  // unconditional router-level `.use()`, so it would otherwise intercept
   // every /v1/* request (erroring via next(err), never falling through) —
-  // including ones meant for these other two routers — since Express tries
+  // including ones meant for these other routers — since Express tries
   // mounted routers in registration order by path prefix.
 
   app.use(
@@ -65,6 +77,29 @@ export function createApp(deps: AppDeps): Express {
       ruleService: deps.ruleService,
       engine: deps.engine,
       verifyApiKey,
+    }),
+  );
+
+  app.use('/v1/auth', createAuthRouter({ tenantsRepo: deps.tenantsRepo, sessionSecret: deps.sessionSecret }));
+
+  // /v1/account/rules is more specific than /v1/account below it and must be
+  // mounted first, for the same reason as the admin router note above.
+  app.use(
+    '/v1/account/rules',
+    createDashboardRulesRouter({
+      ruleService: deps.ruleService,
+      apiKeysRepo: deps.apiKeysRepo,
+      engine: deps.engine,
+      sessionSecret: deps.sessionSecret,
+    }),
+  );
+
+  app.use(
+    '/v1/account',
+    createAccountRouter({
+      apiKeysRepo: deps.apiKeysRepo,
+      sessionSecret: deps.sessionSecret,
+      apiKeyPepper: deps.apiKeyPepper,
     }),
   );
 

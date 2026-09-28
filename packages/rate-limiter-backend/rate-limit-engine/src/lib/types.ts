@@ -38,7 +38,19 @@ export interface ConsumeParams {
   cost?: number;
 }
 
+/** Same shape as ConsumeParams minus `cost` — peeking never consumes a request. */
+export type PeekParams = Omit<ConsumeParams, 'cost'>;
+
+export interface PeekResult {
+  limit: number;
+  remaining: number;
+  /** Milliseconds until the window/bucket fully resets. */
+  resetMs: number;
+}
+
 export interface RateLimitStrategy {
   readonly algorithm: RateLimitAlgorithm;
   consume(params: ConsumeParams): Promise<RateLimitResult>;
+  /** Reports current usage without consuming a request. */
+  peek(params: PeekParams): Promise<PeekResult>;
 }

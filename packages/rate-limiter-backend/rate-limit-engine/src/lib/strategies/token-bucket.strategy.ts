@@ -1,6 +1,12 @@
 import { buildRateLimitKey } from '../key.js';
 import type { RateLimiterRedisClient } from '../redis-commands.js';
-import type { ConsumeParams, RateLimitResult, RateLimitStrategy } from '../types.js';
+import type {
+  ConsumeParams,
+  PeekParams,
+  PeekResult,
+  RateLimitResult,
+  RateLimitStrategy,
+} from '../types.js';
 
 export class TokenBucketStrategy implements RateLimitStrategy {
   readonly algorithm = 'TOKEN_BUCKET' as const;
@@ -31,5 +37,21 @@ export class TokenBucketStrategy implements RateLimitStrategy {
       resetMs: resetOrRetryAfterMs,
       ...(allowed === 1 ? {} : { retryAfterMs: resetOrRetryAfterMs }),
     };
+  }
+
+  async peek(params: PeekParams): Promise<PeekResult> {
+    if (!params.refillRatePerMs) {
+      throw new Error('TOKEN_BUCKET requires refillRatePerMs');
+    }
+    const capacity = params.capacity ?? params.limit;
+    const key = buildRateLimitKey(this.algorithm, params);
+
+    const [remaining, resetMs] = await this.redis.rlPeekTokenBucket(
+      key,
+      Date.now(),
+      capacity,
+      params.refillRatePerMs,
+    );
+    return { limit: capacity, remaining, resetMs };
   }
 }

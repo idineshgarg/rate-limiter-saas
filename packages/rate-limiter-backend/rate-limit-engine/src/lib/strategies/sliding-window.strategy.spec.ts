@@ -74,4 +74,24 @@ describe('SlidingWindowStrategy', () => {
     const allowedCount = results.filter((r) => r.allowed).length;
     expect(allowedCount).toBe(p.limit);
   });
+
+  describe('peek', () => {
+    it('reports full remaining for a never-used key without creating one', async () => {
+      const p = params();
+      const result = await engine.peek('SLIDING_WINDOW', p);
+      expect(result).toEqual({ limit: p.limit, remaining: p.limit, resetMs: p.windowMs });
+    });
+
+    it('reflects consumed requests without consuming one itself', async () => {
+      const p = params();
+      await engine.consume('SLIDING_WINDOW', p);
+      await engine.consume('SLIDING_WINDOW', p);
+
+      const peeked = await engine.peek('SLIDING_WINDOW', p);
+      expect(peeked.remaining).toBe(p.limit - 2);
+
+      const peekedAgain = await engine.peek('SLIDING_WINDOW', p);
+      expect(peekedAgain.remaining).toBe(p.limit - 2);
+    });
+  });
 });

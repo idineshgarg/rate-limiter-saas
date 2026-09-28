@@ -4,9 +4,9 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug @org/rate-limiter-backend with Nx",
+      "name": "Debug @dg/rate-limiter-backend with Nx",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["nx", "serve", "@org/rate-limiter-backend"],
+      "runtimeArgs": ["nx", "serve", "@dg/rate-limiter-backend"],
       "env": {
         "NODE_OPTIONS": "--inspect=9229"
       },

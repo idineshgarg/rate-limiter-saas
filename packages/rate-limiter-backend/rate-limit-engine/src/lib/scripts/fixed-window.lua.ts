@@ -25,3 +25,25 @@ else
   return {1, current, ttl}
 end
 `;
+
+// Read-only — reports current usage without consuming a request.
+// KEYS[1] = key
+// ARGV[1] = limit
+// returns { remaining, ttlMs }
+export const FIXED_WINDOW_PEEK_LUA = `
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+
+local current = tonumber(redis.call('GET', key)) or 0
+local ttl = redis.call('PTTL', key)
+if ttl < 0 then
+  ttl = 0
+end
+
+local remaining = limit - current
+if remaining < 0 then
+  remaining = 0
+end
+
+return {remaining, ttl}
+`;

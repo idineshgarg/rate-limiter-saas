@@ -1,5 +1,5 @@
 {
-  "name": "@org/rate-limiter-backend-rate-limit-engine",
+  "name": "@dg/rate-limiter-backend-rate-limit-engine",
   "version": "0.0.1",
   "private": true,
   "type": "module",

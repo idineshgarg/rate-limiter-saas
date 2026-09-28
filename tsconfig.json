@@ -17,6 +17,12 @@
     },
     {
       "path": "./packages/rate-limiter-backend/rules"
+    },
+    {
+      "path": "./apps/dashboard"
+    },
+    {
+      "path": "./packages/rate-limiter-client"
     }
   ]
 }

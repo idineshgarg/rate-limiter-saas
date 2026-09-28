@@ -75,4 +75,24 @@ describe('TokenBucketStrategy', () => {
     const allowedCount = results.filter((r) => r.allowed).length;
     expect(allowedCount).toBe(p.capacity);
   });
+
+  describe('peek', () => {
+    it('reports full remaining for a never-used key without creating one', async () => {
+      const p = params();
+      const result = await engine.peek('TOKEN_BUCKET', p);
+      expect(result).toEqual({ limit: p.capacity, remaining: p.capacity, resetMs: 0 });
+    });
+
+    it('reflects consumed requests without consuming one itself', async () => {
+      const p = params();
+      await engine.consume('TOKEN_BUCKET', p);
+      await engine.consume('TOKEN_BUCKET', p);
+
+      const peeked = await engine.peek('TOKEN_BUCKET', p);
+      expect(peeked.remaining).toBe((p.capacity as number) - 2);
+
+      const peekedAgain = await engine.peek('TOKEN_BUCKET', p);
+      expect(peekedAgain.remaining).toBe((p.capacity as number) - 2);
+    });
+  });
 });

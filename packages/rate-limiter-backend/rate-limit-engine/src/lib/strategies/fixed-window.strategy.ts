@@ -1,6 +1,12 @@
 import { buildRateLimitKey } from '../key.js';
 import type { RateLimiterRedisClient } from '../redis-commands.js';
-import type { ConsumeParams, RateLimitResult, RateLimitStrategy } from '../types.js';
+import type {
+  ConsumeParams,
+  PeekParams,
+  PeekResult,
+  RateLimitResult,
+  RateLimitStrategy,
+} from '../types.js';
 
 export class FixedWindowStrategy implements RateLimitStrategy {
   readonly algorithm = 'FIXED_WINDOW' as const;
@@ -28,5 +34,11 @@ export class FixedWindowStrategy implements RateLimitStrategy {
       resetMs: ttlMs,
       ...(allowed === 1 ? {} : { retryAfterMs: ttlMs }),
     };
+  }
+
+  async peek(params: PeekParams): Promise<PeekResult> {
+    const key = buildRateLimitKey(this.algorithm, params);
+    const [remaining, ttlMs] = await this.redis.rlPeekFixedWindow(key, params.limit);
+    return { limit: params.limit, remaining, resetMs: ttlMs };
   }
 }

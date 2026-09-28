@@ -1,5 +1,5 @@
 {
-  "name": "@org/rate-limiter-backend",
+  "name": "@dg/rate-limiter-backend",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -19,6 +19,9 @@
             "esm"
           ],
           "bundle": true,
+          "external": [
+            "jsonwebtoken"
+          ],
           "main": "apps/rate-limiter-backend/src/main.ts",
           "tsConfig": "apps/rate-limiter-backend/tsconfig.app.json",
           "assets": [
@@ -98,15 +101,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@org/rate-limiter-backend:build",
+          "buildTarget": "@dg/rate-limiter-backend:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@org/rate-limiter-backend:build:development"
+            "buildTarget": "@dg/rate-limiter-backend:build:development"
           },
           "production": {
-            "buildTarget": "@org/rate-limiter-backend:build:production"
+            "buildTarget": "@dg/rate-limiter-backend:build:production"
           }
         }
       },
@@ -140,15 +143,18 @@
     "dotenv": "^18.0.4",
     "zod": "^4.6.5",
     "ioredis": "^6.0.0",
-    "@prisma/client": "^7.10.0"
+    "@prisma/client": "^7.10.0",
+    "cookie-parser": "^1.4.7",
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
-    "@org/rate-limiter-backend-rate-limit-engine": "*",
-    "@org/rate-limiter-backend-data-access": "*",
-    "@org/rate-limiter-backend-auth": "*",
-    "@org/rate-limiter-backend-rules": "*",
+    "@dg/rate-limiter-backend-rate-limit-engine": "*",
+    "@dg/rate-limiter-backend-data-access": "*",
+    "@dg/rate-limiter-backend-auth": "*",
+    "@dg/rate-limiter-backend-rules": "*",
     "supertest": "^7.1.4",
     "@types/supertest": "^6.0.3",
+    "@types/cookie-parser": "^1.4.10",
     "testcontainers": "^12.1.0",
     "@testcontainers/postgresql": "^12.1.0",
     "@testcontainers/redis": "^12.1.0"

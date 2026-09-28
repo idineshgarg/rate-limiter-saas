@@ -22,7 +22,7 @@ export type UpdateRateLimitRuleInput = Partial<
 >;
 
 export class RateLimitRulesRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   create(input: CreateRateLimitRuleInput): Promise<RateLimitRule> {
     return this.prisma.rateLimitRule.create({ data: input });

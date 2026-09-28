@@ -1,5 +1,5 @@
 {
-  "name": "@org/rate-limiter-backend-auth",
+  "name": "@dg/rate-limiter-backend-auth",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -18,9 +18,13 @@
       "scope:rate-limiter-backend"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "jsonwebtoken": "^9.0.3"
+  },
   "devDependencies": {
     "express": "^4.21.2",
-    "@types/express": "^4.17.21"
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/cookie-parser": "^1.4.10"
   }
 }

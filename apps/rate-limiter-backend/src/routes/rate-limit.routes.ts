@@ -1,6 +1,6 @@
-import { createApiKeyAuthMiddleware, type VerifyApiKey } from '@org/rate-limiter-backend-auth';
-import type { RateLimiterEngine } from '@org/rate-limiter-backend-rate-limit-engine';
-import { checkRequestSchema, parseOrThrow, type RuleService } from '@org/rate-limiter-backend-rules';
+import { createApiKeyAuthMiddleware, type VerifyApiKey } from '@dg/rate-limiter-backend-auth';
+import type { RateLimiterEngine } from '@dg/rate-limiter-backend-rate-limit-engine';
+import { checkRequestSchema, parseOrThrow, type RuleService } from '@dg/rate-limiter-backend-rules';
 import { Router } from 'express';
 import { asyncHandler } from '../lib/async-handler.js';
 

@@ -33,7 +33,7 @@ docker compose up -d
 cp .env.example .env
 
 # 3. Apply the database schema
-npm exec nx run @org/rate-limiter-backend-data-access:prisma-migrate
+npm exec nx run @dg/rate-limiter-backend-data-access:prisma-migrate
 
 # 4. Start the API
 npm exec nx serve rate-limiter-backend
@@ -108,7 +108,7 @@ Projects are tagged `scope:rate-limiter-backend` and enforce architectural const
 npx nx graph
 
 # View a specific project's details
-npx nx show project @org/rate-limiter-backend --web
+npx nx show project @dg/rate-limiter-backend --web
 ```
 
 [Learn more about module boundaries →](https://nx.dev/docs/features/enforce-module-boundaries)
@@ -136,11 +136,11 @@ npx nx show project @org/rate-limiter-backend --web
 # Project exploration
 npx nx graph                                              # Interactive dependency graph
 npx nx list                                               # List installed plugins
-npx nx show project @org/rate-limiter-backend --web       # View project details
+npx nx show project @dg/rate-limiter-backend --web       # View project details
 
 # Development
 npx nx serve rate-limiter-backend                         # Serve the API
-npx nx run @org/rate-limiter-backend:build                # Build the API
+npx nx run @dg/rate-limiter-backend:build                # Build the API
 
 # Running multiple tasks
 npx nx run-many -t build                       # Build all projects

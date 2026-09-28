@@ -1,5 +1,5 @@
 {
-  "name": "@org/rate-limiter-backend-rules",
+  "name": "@dg/rate-limiter-backend-rules",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -22,6 +22,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@org/rate-limiter-backend-data-access": "*"
+    "@dg/rate-limiter-backend-data-access": "*"
   }
 }

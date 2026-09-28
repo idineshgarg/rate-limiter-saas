@@ -35,3 +35,26 @@ else
   return {0, count, retryAfter}
 end
 `;
+
+// Read-only — reports current usage without consuming a request. ZCOUNT
+// naturally excludes entries outside the window, so no ZREMRANGEBYSCORE
+// (a write) is needed to get an accurate count.
+// KEYS[1] = key
+// ARGV[1] = now (ms)
+// ARGV[2] = windowMs
+// ARGV[3] = limit
+// returns { remaining, windowMs }
+export const SLIDING_WINDOW_PEEK_LUA = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local windowMs = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+
+local count = redis.call('ZCOUNT', key, now - windowMs, now)
+local remaining = limit - count
+if remaining < 0 then
+  remaining = 0
+end
+
+return {remaining, windowMs}
+`;

@@ -2,11 +2,11 @@ import {
   createAdminTokenAuthMiddleware,
   generateApiKey,
   hashApiKey,
-} from '@org/rate-limiter-backend-auth';
+} from '@dg/rate-limiter-backend-auth';
 import type {
   ApiKeysRepository,
   TenantsRepository,
-} from '@org/rate-limiter-backend-data-access';
+} from '@dg/rate-limiter-backend-data-access';
 import { Router } from 'express';
 import { asyncHandler } from '../lib/async-handler.js';
 

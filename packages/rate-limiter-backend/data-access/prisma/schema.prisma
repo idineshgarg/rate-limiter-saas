@@ -8,11 +8,14 @@ datasource db {
 }
 
 model Tenant {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  // Null for tenants created via the admin bootstrap flow (no self-service
+  // login configured for them) — only self-signed-up tenants can log in.
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   apiKeys ApiKey[]
   rules   RateLimitRule[]

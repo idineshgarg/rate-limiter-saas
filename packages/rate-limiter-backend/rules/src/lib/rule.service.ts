@@ -1,7 +1,7 @@
 import type {
   RateLimitRule,
   RateLimitRulesRepository,
-} from '@org/rate-limiter-backend-data-access';
+} from '@dg/rate-limiter-backend-data-access';
 import { ValidationError, RuleNotFoundError } from './errors.js';
 import { parseOrThrow } from './parse.js';
 import { createRuleSchema, updateRuleSchema } from './schemas.js';

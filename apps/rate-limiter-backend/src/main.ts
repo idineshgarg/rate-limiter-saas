@@ -1,13 +1,13 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
-import { createRedisClient, createRateLimiterEngine } from '@org/rate-limiter-backend-rate-limit-engine';
+import { createRedisClient, createRateLimiterEngine } from '@dg/rate-limiter-backend-rate-limit-engine';
 import {
   ApiKeysRepository,
   RateLimitRulesRepository,
   TenantsRepository,
   createPrismaClient,
-} from '@org/rate-limiter-backend-data-access';
-import { RuleService } from '@org/rate-limiter-backend-rules';
+} from '@dg/rate-limiter-backend-data-access';
+import { RuleService } from '@dg/rate-limiter-backend-rules';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -30,6 +30,8 @@ const app = createApp({
   engine: createRateLimiterEngine(redis),
   adminToken: requireEnv('ADMIN_TOKEN'),
   apiKeyPepper: requireEnv('API_KEY_HASH_PEPPER'),
+  sessionSecret: requireEnv('SESSION_SECRET'),
+  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:4200',
 });
 
 app.listen(port, host, () => {

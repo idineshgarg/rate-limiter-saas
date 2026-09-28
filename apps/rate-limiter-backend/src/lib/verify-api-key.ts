@@ -1,5 +1,5 @@
-import { hashApiKey, type VerifyApiKey } from '@org/rate-limiter-backend-auth';
-import type { ApiKeysRepository } from '@org/rate-limiter-backend-data-access';
+import { hashApiKey, type VerifyApiKey } from '@dg/rate-limiter-backend-auth';
+import type { ApiKeysRepository } from '@dg/rate-limiter-backend-data-access';
 
 export function createVerifyApiKey(
   apiKeysRepo: ApiKeysRepository,

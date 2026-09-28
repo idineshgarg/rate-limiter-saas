@@ -3,6 +3,8 @@ import type { PrismaClient, Tenant } from '../generated/prisma/client.js';
 export interface CreateTenantInput {
   name: string;
   email: string;
+  /** Present for self-signed-up tenants; omitted for admin-bootstrapped ones. */
+  passwordHash?: string;
 }
 
 export class TenantsRepository {
@@ -14,5 +16,9 @@ export class TenantsRepository {
 
   findById(id: string): Promise<Tenant | null> {
     return this.prisma.tenant.findUnique({ where: { id } });
+  }
+
+  findByEmail(email: string): Promise<Tenant | null> {
+    return this.prisma.tenant.findUnique({ where: { email } });
   }
 }

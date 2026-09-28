@@ -25,6 +25,13 @@ export class ApiKeysRepository {
     return this.prisma.apiKey.findUnique({ where: { id } });
   }
 
+  listForTenant(tenantId: string): Promise<ApiKey[]> {
+    return this.prisma.apiKey.findMany({
+      where: { tenantId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   revoke(id: string): Promise<ApiKey> {
     return this.prisma.apiKey.update({
       where: { id },
