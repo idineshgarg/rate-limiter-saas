@@ -7,31 +7,16 @@
       "path": "./apps/rate-limiter-backend"
     },
     {
-      "path": "./apps/dashboard-e2e"
+      "path": "./packages/rate-limiter-backend/rate-limit-engine"
     },
     {
-      "path": "./apps/dashboard"
+      "path": "./packages/rate-limiter-backend/data-access"
     },
     {
-      "path": "./packages/rate-limiter-backend/products"
+      "path": "./packages/rate-limiter-backend/auth"
     },
     {
-      "path": "./packages/shared/models"
-    },
-    {
-      "path": "./packages/dashboard/data"
-    },
-    {
-      "path": "./packages/dashboard/feature-product-detail"
-    },
-    {
-      "path": "./packages/dashboard/feature-products"
-    },
-    {
-      "path": "./packages/dashboard/shared-ui"
-    },
-    {
-      "path": "./packages/shared/test-utils"
+      "path": "./packages/rate-limiter-backend/rules"
     }
   ]
 }

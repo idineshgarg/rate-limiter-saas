@@ -21,10 +21,16 @@
   ],
   "references": [
     {
-      "path": "../../packages/shared/models/tsconfig.lib.json"
+      "path": "../../packages/rate-limiter-backend/rules/tsconfig.lib.json"
     },
     {
-      "path": "../../packages/rate-limiter-backend/products/tsconfig.lib.json"
+      "path": "../../packages/rate-limiter-backend/auth/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/rate-limiter-backend/data-access/tsconfig.lib.json"
+    },
+    {
+      "path": "../../packages/rate-limiter-backend/rate-limit-engine/tsconfig.lib.json"
     }
   ]
 }

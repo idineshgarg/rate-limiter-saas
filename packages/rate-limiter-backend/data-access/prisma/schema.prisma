@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  apiKeys ApiKey[]
+  rules   RateLimitRule[]
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+model ApiKey {
+  id         String       @id @default(uuid())
+  tenantId   String
+  tenant     Tenant       @relation(fields: [tenantId], references: [id])
+  name       String
+  keyPrefix  String
+  hashedKey  String       @unique
+  status     ApiKeyStatus @default(ACTIVE)
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  rules RateLimitRule[]
+
+  @@index([tenantId])
+}
+
+enum RateLimitAlgorithm {
+  FIXED_WINDOW
+  SLIDING_WINDOW
+  LEAKY_BUCKET
+  TOKEN_BUCKET
+}
+
+enum RuleScope {
+  API_KEY
+  IDENTIFIER
+}
+
+model RateLimitRule {
+  id              String              @id @default(uuid())
+  tenantId        String
+  tenant          Tenant              @relation(fields: [tenantId], references: [id])
+  apiKeyId        String
+  apiKey          ApiKey              @relation(fields: [apiKeyId], references: [id])
+  resource        String
+  algorithm       RateLimitAlgorithm
+  scope           RuleScope           @default(API_KEY)
+  limit           Int
+  windowMs        Int?
+  capacity        Int?
+  refillRatePerMs Float?
+  leakRatePerMs   Float?
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@unique([apiKeyId, resource])
+  @@index([tenantId])
+}

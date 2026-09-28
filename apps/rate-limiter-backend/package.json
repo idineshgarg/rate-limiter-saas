@@ -2,6 +2,7 @@
   "name": "@org/rate-limiter-backend",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "nx": {
     "projectType": "application",
     "targets": {
@@ -15,7 +16,7 @@
           "platform": "node",
           "outputPath": "apps/rate-limiter-backend/dist",
           "format": [
-            "cjs"
+            "esm"
           ],
           "bundle": true,
           "main": "apps/rate-limiter-backend/src/main.ts",
@@ -136,7 +137,20 @@
   },
   "dependencies": {
     "express": "^4.21.2",
-    "@org/rate-limiter-backend-products": "*",
-    "@org/models": "*"
+    "dotenv": "^18.0.4",
+    "zod": "^4.6.5",
+    "ioredis": "^6.0.0",
+    "@prisma/client": "^7.10.0"
+  },
+  "devDependencies": {
+    "@org/rate-limiter-backend-rate-limit-engine": "*",
+    "@org/rate-limiter-backend-data-access": "*",
+    "@org/rate-limiter-backend-auth": "*",
+    "@org/rate-limiter-backend-rules": "*",
+    "supertest": "^7.1.4",
+    "@types/supertest": "^6.0.3",
+    "testcontainers": "^12.1.0",
+    "@testcontainers/postgresql": "^12.1.0",
+    "@testcontainers/redis": "^12.1.0"
   }
 }

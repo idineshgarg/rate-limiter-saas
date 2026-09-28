@@ -52,3 +52,9 @@ test-output
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
+
+# environment variables
+.env
+
+# generated Prisma client
+packages/rate-limiter-backend/data-access/src/generated
