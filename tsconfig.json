@@ -4,31 +4,31 @@
   "files": [],
   "references": [
     {
-      "path": "./apps/api"
+      "path": "./apps/rate-limiter-backend"
     },
     {
-      "path": "./apps/shop-e2e"
+      "path": "./apps/dashboard-e2e"
     },
     {
-      "path": "./apps/shop"
+      "path": "./apps/dashboard"
     },
     {
-      "path": "./packages/api/products"
+      "path": "./packages/rate-limiter-backend/products"
     },
     {
       "path": "./packages/shared/models"
     },
     {
-      "path": "./packages/shop/data"
+      "path": "./packages/dashboard/data"
     },
     {
-      "path": "./packages/shop/feature-product-detail"
+      "path": "./packages/dashboard/feature-product-detail"
     },
     {
-      "path": "./packages/shop/feature-products"
+      "path": "./packages/dashboard/feature-products"
     },
     {
-      "path": "./packages/shop/shared-ui"
+      "path": "./packages/dashboard/shared-ui"
     },
     {
       "path": "./packages/shared/test-utils"

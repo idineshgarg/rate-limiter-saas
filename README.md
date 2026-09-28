@@ -13,21 +13,21 @@ This repository demonstrates a production-ready React monorepo with:
 
 - **2 Applications**
 
-  - `shop` - React e-commerce application with product listings and detail views
+  - `dashboard` - React e-commerce application with product listings and detail views
   - `api` - Backend API serving product data
 
 - **7 Libraries**
 
-  - `@org/shop-feature-products` - Product listing feature (React)
-  - `@org/shop-feature-product-detail` - Product detail feature (React)
-  - `@org/shop-data` - Data access layer for shop features
-  - `@org/shop-shared-ui` - Shared UI components
+  - `@org/dashboard-feature-products` - Product listing feature (React)
+  - `@org/dashboard-feature-product-detail` - Product detail feature (React)
+  - `@org/dashboard-data` - Data access layer for dashboard features
+  - `@org/dashboard-shared-ui` - Shared UI components
   - `@org/models` - Shared data models
-  - `@org/api-products` - API product service library
+  - `@org/rate-limiter-backend-products` - API product service library
   - `@org/shared-test-utils` - Shared testing utilities
 
 - **E2E Testing**
-  - `shop-e2e` - Playwright tests for the shop application
+  - `dashboard-e2e` - Playwright tests for the dashboard application
 
 ## 🚀 Quick Start
 
@@ -39,11 +39,11 @@ cd <your-repository-name>
 # Install dependencies
 npm install
 
-# Serve the React shop application (this will simultaneously serve the API backend)
-npx nx run @org/shop:serve
+# Serve the React dashboard application (this will simultaneously serve the API backend)
+npx nx run @org/dashboard:serve
 
 # ...or you can serve the API separately
-npx nx run @org/api:serve
+npx nx run @org/rate-limiter-backend:serve
 
 # Build all projects
 npx nx run-many -t build
@@ -55,7 +55,7 @@ npx nx run-many -t test
 npx nx run-many -t lint
 
 # Run e2e tests
-npx nx run @org/shop-e2e:e2e
+npx nx run @org/dashboard-e2e:e2e
 
 # Run tasks in parallel
 
@@ -74,8 +74,8 @@ This repository showcases several powerful Nx features:
 Enforces architectural constraints using tags. Each project has specific dependencies it can use:
 
 - `scope:shared` - Can be used by all projects
-- `scope:shop` - Shop-specific libraries
-- `scope:api` - API-specific libraries
+- `scope:dashboard` - Dashboard-specific libraries
+- `scope:rate-limiter-backend` - API-specific libraries
 - `type:feature` - Feature libraries
 - `type:data` - Data access libraries
 - `type:ui` - UI component libraries
@@ -87,7 +87,7 @@ Enforces architectural constraints using tags. Each project has specific depende
 npx nx graph
 
 # View a specific project's details
-npx nx show project @org/shop --web
+npx nx show project @org/dashboard --web
 ```
 
 [Learn more about module boundaries →](https://nx.dev/docs/features/enforce-module-boundaries)
@@ -98,10 +98,10 @@ End-to-end testing with Playwright is pre-configured:
 
 ```bash
 # Run e2e tests
-npx nx run @org/shop-e2e:e2e
+npx nx run @org/dashboard-e2e:e2e
 
 # Run e2e tests in CI mode
-npx nx run @org/shop-e2e:e2e-ci
+npx nx run @org/dashboard-e2e:e2e-ci
 ```
 
 [Learn more about E2E testing →](https://nx.dev/docs/technologies/test-tools/playwright)
@@ -112,7 +112,7 @@ Fast unit testing with Vitest for React libraries:
 
 ```bash
 # Test a specific library
-npx nx run @org/shop-data:test
+npx nx run @org/dashboard-data:test
 
 # Test all projects
 npx nx run-many -t test
@@ -142,17 +142,17 @@ This feature helps maintain a healthy CI pipeline by automatically detecting and
 
 ```
 ├── apps/
-│   ├── shop/           [scope:shop]    - React e-commerce app
-│   ├── shop-e2e/                       - E2E tests for shop
-│   └── api/            [scope:api]     - Backend API
+│   ├── dashboard/           [scope:dashboard]    - React e-commerce app
+│   ├── dashboard-e2e/                       - E2E tests for dashboard
+│   └── api/            [scope:rate-limiter-backend]     - Backend API
 ├── packages/
-│   ├── shop/
-│   │   ├── feature-products/        [scope:shop,type:feature] - Product listing
-│   │   ├── feature-product-detail/  [scope:shop,type:feature] - Product details
-│   │   ├── data/                    [scope:shop,type:data]    - Data access
-│   │   └── shared-ui/               [scope:shop,type:ui]      - UI components
+│   ├── dashboard/
+│   │   ├── feature-products/        [scope:dashboard,type:feature] - Product listing
+│   │   ├── feature-product-detail/  [scope:dashboard,type:feature] - Product details
+│   │   ├── data/                    [scope:dashboard,type:data]    - Data access
+│   │   └── shared-ui/               [scope:dashboard,type:ui]      - UI components
 │   ├── api/
-│   │   └── products/    [scope:api]    - Product service
+│   │   └── products/    [scope:rate-limiter-backend]    - Product service
 │   └── shared/
 │       ├── models/      [scope:shared,type:data] - Shared models
 │       └── test-utils/  [scope:shared]           - Testing utilities
@@ -167,10 +167,10 @@ This repository uses tags to enforce module boundaries:
 
 | Project                 | Tags                         | Can Import From              |
 | ----------------------- | ---------------------------- | ---------------------------- |
-| `shop`                  | `scope:shop`                 | `scope:shop`, `scope:shared` |
-| `api`                   | `scope:api`                  | `scope:api`, `scope:shared`  |
-| `shop-feature-products` | `scope:shop`, `type:feature` | `scope:shop`, `scope:shared` |
-| `shop-data`             | `scope:shop`, `type:data`    | `scope:shared`               |
+| `dashboard`                  | `scope:dashboard`                 | `scope:dashboard`, `scope:shared` |
+| `api`                   | `scope:rate-limiter-backend`                  | `scope:rate-limiter-backend`, `scope:shared`  |
+| `dashboard-feature-products` | `scope:dashboard`, `type:feature` | `scope:dashboard`, `scope:shared` |
+| `dashboard-data`             | `scope:dashboard`, `type:data`    | `scope:shared`               |
 | `models`                | `scope:shared`, `type:data`  | Nothing (base library)       |
 
 ## 📚 Useful Commands
@@ -179,14 +179,14 @@ This repository uses tags to enforce module boundaries:
 # Project exploration
 npx nx graph                                    # Interactive dependency graph
 npx nx list                                     # List installed plugins
-npx nx show project @org/shop --web                 # View project details
+npx nx show project @org/dashboard --web                 # View project details
 
 # Development
-npx nx run @org/shop:serve                              # Serve React app
-npx nx run @org/api:serve                               # Serve backend API
-npx nx run @org/shop:build                              # Build React app
-npx nx run @org/shop-data:test                          # Test a specific library
-npx nx run @org/shop-feature-products:lint              # Lint a specific library
+npx nx run @org/dashboard:serve                              # Serve React app
+npx nx run @org/rate-limiter-backend:serve                               # Serve backend API
+npx nx run @org/dashboard:build                              # Build React app
+npx nx run @org/dashboard-data:test                          # Test a specific library
+npx nx run @org/dashboard-feature-products:lint              # Lint a specific library
 
 # Running multiple tasks
 npx nx run-many -t build                       # Build all projects

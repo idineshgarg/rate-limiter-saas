@@ -66,8 +66,8 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/api/products",
+    "packages/rate-limiter-backend/products",
     "packages/shared/*",
-    "packages/shop/*"
+    "packages/dashboard/*"
   ]
 }

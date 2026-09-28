@@ -1,0 +1,36 @@
+{
+  "name": "@org/dashboard",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "projectType": "application",
+    "tags": [
+      "scope:dashboard"
+    ],
+    "targets": {
+      "serve": {
+        "dependsOn": [
+          "@org/rate-limiter-backend:serve"
+        ]
+      },
+      "dev": {
+        "dependsOn": [
+          "@org/rate-limiter-backend:serve"
+        ]
+      },
+      "preview": {
+        "dependsOn": [
+          "build",
+          "@org/rate-limiter-backend:serve"
+        ]
+      }
+    }
+  },
+  "devDependencies": {
+    "@org/models": "*",
+    "@org/dashboard-data": "*",
+    "@org/dashboard-feature-product-detail": "*",
+    "@org/dashboard-feature-products": "*",
+    "@org/dashboard-shared-ui": "*"
+  }
+}
