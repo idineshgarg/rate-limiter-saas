@@ -113,6 +113,11 @@
           }
         }
       },
+      "typecheck": {
+        "dependsOn": [
+          "build"
+        ]
+      },
       "test": {
         "options": {
           "passWithNoTests": true
