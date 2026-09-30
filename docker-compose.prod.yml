@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/rate-limiter-backend/Dockerfile
+      target: migrate
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/rate-limiter-backend/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file: .env.production
+    # Bound to localhost only — the host's nginx (TLS termination + vhost
+    # routing) reaches it directly; never exposed to the internet on this
+    # port itself.
+    ports:
+      - '127.0.0.1:3333:3333'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: apps/dashboard/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    restart: unless-stopped
+    # Bound to localhost only, and to 8080 rather than 80 — the host's
+    # nginx owns port 80/443 for TLS termination and proxies here.
+    ports:
+      - '127.0.0.1:8080:80'
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

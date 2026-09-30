@@ -55,6 +55,8 @@ test-output
 
 # environment variables
 .env
+.env.production
+!.env.production.example
 
 # generated Prisma client
 packages/rate-limiter-backend/data-access/src/generated

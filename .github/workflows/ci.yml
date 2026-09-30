@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 permissions:
   actions: read
@@ -30,3 +31,40 @@ jobs:
 
       - run: npx nx format:check --base="remotes/origin/main"
       - run: npx nx run-many -t lint test build typecheck e2e
+
+  deploy:
+    needs: main
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync app code to EC2
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --exclude node_modules --exclude '**/node_modules' \
+            --exclude dist --exclude '**/dist' \
+            --exclude out-tsc --exclude '**/out-tsc' \
+            --exclude .git --exclude .nx --exclude tmp --exclude coverage \
+            --exclude '.env' --exclude '.env.production*' \
+            ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/app/
+
+      - name: Build and deploy (sequential — instance has limited RAM)
+        run: |
+          ssh -i ~/.ssh/deploy_key ec2-user@${{ secrets.EC2_HOST }} '
+            set -e
+            cd /home/ec2-user/app
+            sudo docker compose -f docker-compose.prod.yml build --pull=false migrate
+            sudo docker compose -f docker-compose.prod.yml build --pull=false backend
+            sudo docker compose -f docker-compose.prod.yml build --pull=false dashboard
+            sudo docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            sudo docker image prune -f
+          '
