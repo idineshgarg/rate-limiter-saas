@@ -31,6 +31,13 @@ jobs:
 
       - run: npx nx format:check --base="remotes/origin/main"
       - run: npx nx run-many -t lint test build typecheck e2e
+        env:
+          # `prisma generate` (a dependency of build/lint/test/typecheck) only
+          # needs this to be *set*, not reachable — it never connects. Without
+          # it, config loading fails outright. This previously went unnoticed
+          # because a cached prisma-generate result from local runs masked the
+          # gap; it only surfaces on a cache miss.
+          DATABASE_URL: postgresql://user:pass@localhost:5432/db
 
   deploy:
     needs: main
