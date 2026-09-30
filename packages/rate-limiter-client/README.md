@@ -37,6 +37,32 @@ throws a `RateLimiterApiError` (with `status` and `code`) for auth,
 validation, or transport failures, since a 429 is an expected outcome of
 rate limiting, not an error condition.
 
+## Express middleware
+
+```ts
+import { RateLimiterClient } from '@dineshgarg/rate-limiter-client';
+import { rateLimitMiddleware } from '@dineshgarg/rate-limiter-client/express';
+
+const rateLimiter = new RateLimiterClient({
+  apiKey: process.env.RATE_LIMITER_API_KEY!,
+  baseUrl: 'https://api.idineshgarg.in',
+});
+
+app.post(
+  '/checkout',
+  rateLimitMiddleware(rateLimiter, {
+    resource: 'checkout-api',
+    identifier: (req) => req.ip, // required only for IDENTIFIER-scoped rules
+  }),
+  checkoutHandler,
+);
+```
+
+Sets `X-RateLimit-Limit`/`X-RateLimit-Remaining` on every request, and
+`Retry-After` plus a 429 JSON response on denied ones. Both the denied
+response and the error path (auth/validation/transport failures — which
+`next(error)` by default) are overridable via `onDenied`/`onError`.
+
 ## Building
 
 Run `nx build rate-limiter-client` to build the library.

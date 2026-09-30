@@ -1,6 +1,6 @@
 {
   "name": "@dineshgarg/rate-limiter-client",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "module",
   "publishConfig": {
     "access": "public"
@@ -15,6 +15,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./express": {
+      "@dg/source": "./src/express.ts",
+      "types": "./dist/express.d.ts",
+      "import": "./dist/express.js",
+      "default": "./dist/express.js"
     }
   },
   "files": [
@@ -29,5 +35,17 @@
   },
   "dependencies": {
     "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "express": "^4.21.2",
+    "@types/express": "^4.17.21"
+  },
+  "peerDependencies": {
+    "express": "^4.21.2"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
   }
 }

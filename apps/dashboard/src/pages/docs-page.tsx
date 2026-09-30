@@ -22,6 +22,14 @@ if (!result.allowed) {
   return res.status(429).json({ error: 'Too many requests' });
 }`;
 
+const sdkExpressExample = `import { rateLimitMiddleware } from '@dineshgarg/rate-limiter-client/express';
+
+app.post(
+  '/checkout',
+  rateLimitMiddleware(rateLimiter, { resource: 'checkout-api' }),
+  checkoutHandler,
+);`;
+
 const endpoints = [
   { method: 'POST', path: '/v1/rate-limit/check', auth: 'X-Api-Key', desc: 'Check and consume against the active rule for a resource.' },
   { method: 'POST', path: '/v1/rules', auth: 'X-Api-Key', desc: 'Create a rate-limit rule.' },
@@ -64,6 +72,14 @@ export function DocsPage() {
             The SDK is a thin wrapper — <code>check()</code> makes the exact same HTTP request as
             the curl example above. It never throws for a normal allow/deny outcome (200/429),
             only for auth, validation, or transport failures.
+          </p>
+
+          <h3>Express middleware</h3>
+          <pre className="code-block">{sdkExpressExample}</pre>
+          <p className="panel-description">
+            Sets <code>X-RateLimit-*</code> headers on every request, and <code>Retry-After</code>{' '}
+            plus a 429 on denied ones — both overridable via <code>onDenied</code>/
+            <code>onError</code> options.
           </p>
         </section>
 
