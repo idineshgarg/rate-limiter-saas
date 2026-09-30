@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { ProtectedRoute } from '../components/protected-route.js';
 import { AuthProvider } from '../lib/auth-context.js';
 import { DashboardPage } from '../pages/dashboard-page.js';
+import { DocsPage } from '../pages/docs-page.js';
 import { LoginPage } from '../pages/login-page.js';
 import { SignupPage } from '../pages/signup-page.js';
 
@@ -11,6 +12,7 @@ export function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/docs" element={<DocsPage />} />
         <Route
           path="/"
           element={

@@ -1,4 +1,4 @@
-# @dg/rate-limiter-client
+# @dineshgarg/rate-limiter-client
 
 A minimal client for the rate-limiter SaaS's enforcement endpoint,
 `POST /v1/rate-limit/check`. Call `check()` before handling a request to see
@@ -7,17 +7,17 @@ whether it's allowed under the rule configured for that resource.
 ## Install
 
 ```sh
-npm install @dg/rate-limiter-client
+npm install @dineshgarg/rate-limiter-client
 ```
 
 ## Usage
 
 ```ts
-import { RateLimiterClient } from '@dg/rate-limiter-client';
+import { RateLimiterClient } from '@dineshgarg/rate-limiter-client';
 
 const rateLimiter = new RateLimiterClient({
   apiKey: process.env.RATE_LIMITER_API_KEY!,
-  baseUrl: 'https://api.example.com',
+  baseUrl: 'https://api.idineshgarg.in',
 });
 
 const result = await rateLimiter.check({

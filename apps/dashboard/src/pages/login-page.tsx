@@ -54,6 +54,9 @@ export function LoginPage() {
         <p className="auth-switch">
           Don&apos;t have an account? <Link to="/signup">Sign up</Link>
         </p>
+        <p className="auth-switch">
+          <Link to="/docs">API & SDK docs</Link>
+        </p>
       </form>
     </div>
   );

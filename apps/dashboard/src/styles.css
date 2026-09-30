@@ -243,3 +243,66 @@ label {
   text-decoration: underline;
   cursor: pointer;
 }
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* Docs page */
+.panel-description {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.panel h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.code-block {
+  background: #1a1a22;
+  color: #e4e4ec;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.tester-result {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.tester-result-allowed {
+  background: #e5f5ea;
+  border-color: var(--success);
+}
+
+.tester-result-denied {
+  background: #fff6e5;
+  border-color: #b3791e;
+}
+
+.tester-result-error {
+  background: #fbebea;
+  border-color: var(--danger);
+}
+
+.tester-duration {
+  margin-left: 0.6rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.tester-result pre {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  overflow-x: auto;
+}

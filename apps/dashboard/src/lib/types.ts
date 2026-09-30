@@ -61,3 +61,14 @@ export interface RuleUsage {
   remaining: number;
   resetMs: number;
 }
+
+export interface RateLimitCheckResult {
+  allowed: boolean;
+  limit: number;
+  remaining: number;
+  algorithm: RateLimitAlgorithm;
+  /** Present when allowed: milliseconds until the limit resets. */
+  resetMs?: number;
+  /** Present when denied: milliseconds to wait before retrying. */
+  retryAfterMs?: number;
+}

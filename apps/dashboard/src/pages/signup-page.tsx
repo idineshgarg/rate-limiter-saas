@@ -60,6 +60,9 @@ export function SignupPage() {
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>
         </p>
+        <p className="auth-switch">
+          <Link to="/docs">API & SDK docs</Link>
+        </p>
       </form>
     </div>
   );

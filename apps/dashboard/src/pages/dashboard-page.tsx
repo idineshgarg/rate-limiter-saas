@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiKeysPanel } from '../components/api-keys-panel.js';
 import { RulesPanel } from '../components/rules-panel.js';
 import { apiClient } from '../lib/api-client.js';
@@ -27,9 +28,12 @@ export function DashboardPage() {
             {tenant?.name} · {tenant?.email}
           </p>
         </div>
-        <button type="button" onClick={() => logout()}>
-          Log out
-        </button>
+        <div className="dashboard-header-actions">
+          <Link to="/docs">Docs</Link>
+          <button type="button" onClick={() => logout()}>
+            Log out
+          </button>
+        </div>
       </header>
       <main className="dashboard-main">
         <ApiKeysPanel apiKeys={apiKeys} loading={keysLoading} onChange={refreshKeys} />
